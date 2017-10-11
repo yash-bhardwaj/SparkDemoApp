@@ -19,7 +19,7 @@ object WordCount {
       .set("spark.executor.memory", "2g")
     val sc = new SparkContext(conf)
 
-    //sc.setLogLevel("WARN")
+    sc.setLogLevel("WARN")
     val ssc = new StreamingContext(sc, Seconds(5))
     System.setProperty("twitter4j.oauth.consumerKey", "zARETSDdNqGUVSJ6VhBVydkKw")
     System.setProperty("twitter4j.oauth.consumerSecret", "xf3bkFvhZfRT0PgkzNCJEhk8Xqe4LKrJxiZpTKpchqhaYy10uK")
@@ -29,10 +29,16 @@ object WordCount {
     val stream = TwitterUtils.createStream(ssc, None)
 
 
-    val tags = stream.flatMap { status => status.getHashtagEntities.map(_.getText) }
+    /*val tags = stream.flatMap { status => {
+      if(status.getText.contains("#bigdata"))
+        println(s"status -> ${status.getText}")
+      status.getHashtagEntities.map(_.getText) }
+    }
     tags.countByValue().foreachRDD { rdd =>
+
       val now = Calendar.getInstance.getTime
       rdd.sortBy(_._2).map{x =>
+        if(x.toString().contains("#bigdata"))
         println(s"x -> ${x}")
         (x, now)}.saveAsTextFile(s"src/main/resources/twitter/tags_$now")
     }
@@ -41,6 +47,28 @@ object WordCount {
       val tags = t.getText.split(" ")
         .filter(_.startsWith("#")).map(_.toLowerCase)
       tags.contains("#bigdata") && tags.contains("#food")
+    }*/
+    /* stream.map { status => status.getText
+     }.print()*/
+    val tagsWithTweet = stream.map { status =>
+      val filterTweet = status.getText.replaceAll("[^a-z A-Z]+", "")
+      val tweet = status.getText
+      (tweet, filterTweet)
+    }.filter(_._2.nonEmpty).flatMap { case (tweet, filterTweet) =>
+      val hashTags = tweet.split(" ").filter(_.startsWith("#"))
+      hashTags.map { hashTag =>
+        (hashTag, filterTweet)
+      }
+    }
+
+    val finalStream = tagsWithTweet.map { case (hashTag, tweet) =>
+      val sentimentScore: Int = 6
+      hashTag + "::" + tweet + "::" + sentimentScore
+    }
+
+    finalStream.foreachRDD { rdd =>
+      val now = Calendar.getInstance.getTime
+      rdd.saveAsTextFile(s"src/main/resources/twitter/tweets_$now.txt")
     }
     stream.start()
     ssc.start()
