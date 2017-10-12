@@ -10,9 +10,6 @@ import edu.stanford.nlp.sentiment.SentimentCoreAnnotations
 
 import scala.collection.convert.wrapAll._
 
-/**
-  * Created by knoldus on 12/10/17.
-  */
 object SentimentAnalyzer {
 
   val props = new Properties()
@@ -20,15 +17,18 @@ object SentimentAnalyzer {
   val pipeline: StanfordCoreNLP = new StanfordCoreNLP(props)
 
   def mainSentiment(input: String): Sentiment = Option(input) match {
-    case Some(text) if text.nonEmpty => {
-      extractSentiment(text)
-    }
+    case Some(text) if text.nonEmpty => extractSentiment(text)
+
     case _ => throw new IllegalArgumentException("input can't be null or empty")
   }
 
   private def extractSentiment(text: String): Sentiment = {
-    val list : List[(String, Sentiment)] = extractSentiments(text)
-    val (_, sentiment) = list.maxBy { case (sentence, _) => sentence.length }
+    val list: List[(String, Sentiment)] = extractSentiments(text)
+    val sentiment = if (list.isEmpty) {
+      Sentiment.NEUTRAL
+    } else {
+      list.maxBy { case (sentence, _) => sentence.length }._2
+    }
     sentiment
   }
 
@@ -55,9 +55,11 @@ object Sentiment extends Enumeration {
   type Sentiment = Value
   val POSITIVE, NEGATIVE, NEUTRAL = Value
 
-  def toSentiment(sentiment: Int): Sentiment = sentiment match {
-    case x if x == 0 || x == 1 => Sentiment.NEGATIVE
-    case 2 => Sentiment.NEUTRAL
-    case x if x == 3 || x == 4 => Sentiment.POSITIVE
+  def toSentiment(sentiment: Int): Sentiment = {
+    sentiment match {
+      case x if x == 0 || x == 1 => Sentiment.NEGATIVE
+      case 2 => Sentiment.NEUTRAL
+      case x if x == 3 || x == 4 => Sentiment.POSITIVE
+    }
   }
 }
