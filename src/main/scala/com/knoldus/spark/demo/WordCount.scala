@@ -2,6 +2,8 @@ package com.knoldus.spark.demo
 
 import java.util.Calendar
 
+import com.knoldus.spark.demo.Sentiment.Sentiment
+import com.knoldus.spark.demo.SentimentAnalyzer
 import org.apache.spark.streaming.twitter.TwitterUtils
 import org.apache.spark.streaming.{Seconds, StreamingContext}
 import org.apache.spark.{SparkConf, SparkContext}
@@ -62,7 +64,7 @@ object WordCount {
     }
 
     val finalStream = tagsWithTweet.map { case (hashTag, tweet) =>
-      val sentimentScore: Int = 6
+      val sentimentScore: Sentiment = SentimentAnalyzer.mainSentiment(tweet)
       hashTag + "::" + tweet + "::" + sentimentScore
     }
 
