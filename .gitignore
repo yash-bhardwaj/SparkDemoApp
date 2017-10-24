@@ -1,0 +1,9 @@
+.idea/
+project/target/
+project/build.properties
+target/
+src/main/resources/twitter/
+src/main/resources/twitter/tags_*
+src/main/resources/twitter/*
+src/main/resources/twitter
+src/main/resources/twitter/tweets_*
